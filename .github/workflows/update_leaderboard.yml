@@ -1,0 +1,40 @@
+name: Update Leaderboard
+
+# Trigger: 
+# 1. Schedule: Every Monday at 02:00 UTC (Adjust for your timezone)
+# 2. Workflow Dispatch: Allows you to click a button to run it manually
+on:
+  schedule:
+    - cron: '0 2 * * 1' 
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4 pandas
+
+      - name: Run Update Script
+        run: python update_benchmarks.py
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name 'Benchmark Bot'
+          git config --global user.email 'bot@noreply.github.com'
+          git add leaderboard_data.json
+          git commit -m "Auto-update leaderboard data" || exit 0
+          git push
