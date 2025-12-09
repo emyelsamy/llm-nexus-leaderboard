@@ -1,0 +1,737 @@
+# --- FILE 3: index.html ---
+# Note: Using raw strings for HTML to avoid escape issues
+html_content = r'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Nexus - Benchmark Leaderboard 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #06b6d4;   /* Cyan 500 */
+            --secondary: #8b5cf6; /* Violet 500 */
+            --accent: #10b981;    /* Emerald 500 */
+            --design: #ec4899;    /* Pink 500 */
+            --bg-dark: #030712;   /* Gray 950 */
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(17, 24, 39, 0.7);
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg-dark);
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .bg-grid {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -2;
+            mask-image: radial-gradient(circle at 50% 0%, black 40%, transparent 100%);
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 20px 40px -10px rgba(0,0,0,0.5);
+        }
+
+        .glass-card {
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(6,182,212,0.3);
+            box-shadow: 0 10px 30px -10px rgba(6,182,212,0.15);
+        }
+
+        .gradient-title {
+            background: linear-gradient(135deg, #fff 30%, #a5f3fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .custom-table th {
+            font-family: 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+        }
+
+        .table-row-anim {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .table-row-anim:hover {
+            background: rgba(255,255,255,0.03);
+            z-index: 10;
+        }
+
+        .table-row-anim:hover td:first-child {
+            border-left: 2px solid var(--primary);
+        }
+
+        .rank-1-row {
+            background: linear-gradient(90deg, rgba(251, 191, 36, 0.08) 0%, transparent 100%);
+            border-left: 2px solid #fbbf24 !important;
+        }
+
+        .neon-badge { box-shadow: 0 0 10px rgba(6,182,212,0.3); }
+        .trophy-glow-gold { filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6)); }
+        .trophy-glow-silver { filter: drop-shadow(0 0 8px rgba(203, 213, 225, 0.4)); }
+        .trophy-glow-bronze { filter: drop-shadow(0 0 8px rgba(180, 83, 9, 0.4)); }
+        
+        #loader {
+            position: fixed; inset: 0; background: var(--bg-dark); z-index: 50;
+            display: flex; justify-content: center; items-center; transition: opacity 0.5s ease;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 3px solid rgba(6,182,212,0.3);
+            border-top-color: #06b6d4; border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .spec-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: #64748b;
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
+        }
+    </style>
+</head>
+<body class="selection:bg-cyan-500/30">
+
+    <div id="loader">
+        <div class="flex flex-col items-center gap-4">
+            <div class="spinner"></div>
+            <div class="text-cyan-400 font-mono text-xs tracking-widest uppercase">Initializing Data Link...</div>
+        </div>
+    </div>
+
+    <div class="bg-grid"></div>
+
+    <main class="relative w-full max-w-[1600px] mx-auto px-4 py-8 md:py-12 flex flex-col gap-8">
+
+        <!-- HEADER -->
+        <header class="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-white/5 pb-8">
+            <div class="flex flex-col gap-2">
+                <div class="flex items-center gap-2 text-cyan-400 text-xs font-bold tracking-widest uppercase mb-1">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    Live Metrics
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold gradient-title">
+                    LLM Nexus
+                </h1>
+                <p class="text-slate-400 max-w-lg text-lg leading-relaxed">
+                    The definitive performance tracker for frontier models across <span class="text-white font-medium">SWE-bench</span>, <span class="text-white font-medium">LiveCodeBench</span>, <span class="text-white font-medium">LM Arena</span>, and <span class="text-white font-medium">Design Arena</span>.
+                </p>
+            </div>
+
+            <div class="flex gap-6 text-sm font-mono text-slate-500 bg-white/5 rounded-lg p-3 border border-white/5 backdrop-blur-sm">
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase tracking-wider text-slate-400">Total Models</span>
+                    <span class="text-white font-bold" id="modelCountTicker">--</span>
+                </div>
+                <div class="w-px bg-white/10"></div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase tracking-wider text-slate-400">Status</span>
+                    <span class="text-emerald-400 font-bold">Online</span>
+                </div>
+                <div class="w-px bg-white/10"></div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase tracking-wider text-slate-400">Updated</span>
+                    <span class="text-white font-bold" id="lastUpdatedDisplay">--</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- HIGHLIGHT CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="glass-card rounded-2xl p-5 relative group overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <div class="text-xs font-bold text-yellow-500/80 uppercase tracking-widest mb-1">SWE Leader</div>
+                        <div class="text-xl font-bold text-white mb-2">Claude 4.5 Opus</div>
+                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 text-xs font-mono">
+                            <i data-lucide="crown" class="w-3 h-3"></i> 74.40%
+                        </div>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30">
+                        <i data-lucide="trophy" class="w-4 h-4 text-yellow-400"></i>
+                    </div>
+                </div>
+            </div>
+            
+             <div class="glass-card rounded-2xl p-5 relative group overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <div class="text-xs font-bold text-cyan-500/80 uppercase tracking-widest mb-1">WebDev King</div>
+                        <div class="text-xl font-bold text-white mb-2">Claude 4.5 Opus</div>
+                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-200 text-xs font-mono">
+                            <i data-lucide="code-2" class="w-3 h-3"></i> 1511 Elo
+                        </div>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30">
+                        <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5 relative group overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <div class="text-xs font-bold text-pink-500/80 uppercase tracking-widest mb-1">Top Designer</div>
+                        <div class="text-xl font-bold text-white mb-2">Claude 4.5 Opus</div>
+                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-pink-500/10 border border-pink-500/20 text-pink-200 text-xs font-mono">
+                            <i data-lucide="palette" class="w-3 h-3"></i> 1492 Elo
+                        </div>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center border border-pink-500/30">
+                        <i data-lucide="pen-tool" class="w-4 h-4 text-pink-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5 relative group overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <div class="text-xs font-bold text-purple-500/80 uppercase tracking-widest mb-1">Rising Star</div>
+                        <div class="text-xl font-bold text-white mb-2">DeepSeek V3.2</div>
+                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-purple-500/10 border border-purple-500/20 text-purple-200 text-xs font-mono">
+                            <i data-lucide="rocket" class="w-3 h-3"></i> Dec 01
+                        </div>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN DATA TABLE -->
+        <div class="glass-panel rounded-2xl overflow-hidden flex flex-col">
+            
+            <div class="p-6 border-b border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                <!-- Search -->
+                <div class="relative w-full md:w-96 group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i data-lucide="search" class="h-4 w-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors"></i>
+                    </div>
+                    <input type="text" id="searchInput" 
+                        class="block w-full pl-11 pr-4 py-3 text-sm bg-black/40 border border-white/10 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all shadow-inner" 
+                        placeholder="Filter models (e.g. GPT, Claude)...">
+                </div>
+
+                <!-- Legend -->
+                <div class="flex gap-6 text-xs font-medium text-slate-400">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                        <span class="opacity-80">Elite (>70%)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></span>
+                        <span class="opacity-80">Strong (>50%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse custom-table">
+                    <thead>
+                        <tr class="bg-black/20 border-b border-white/5">
+                            <th class="p-5 w-16 text-center">Rank</th>
+                            <th class="p-5 w-1/5">General Model</th>
+                            <th class="p-5 cursor-pointer hover:text-white transition-colors group w-1/5" onclick="sortTable('sweScore')">
+                                <div class="flex items-center gap-2">
+                                    SWE-bench 
+                                    <div class="p-1 rounded bg-white/5 group-hover:bg-white/10 transition">
+                                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="p-5 cursor-pointer hover:text-white transition-colors group w-1/5" onclick="sortTable('liveScore')">
+                                <div class="flex items-center gap-2">
+                                    LiveBench 
+                                    <span class="text-[0.6rem] text-slate-500 normal-case tracking-normal border border-white/10 px-1 rounded">GSO</span>
+                                    <div class="p-1 rounded bg-white/5 group-hover:bg-white/10 transition">
+                                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="p-5 cursor-pointer hover:text-white transition-colors group w-1/5" onclick="sortTable('arenaScore')">
+                                <div class="flex items-center gap-2">
+                                    LM Arena 
+                                    <span class="text-[0.6rem] text-slate-500 normal-case tracking-normal border border-white/10 px-1 rounded">WebDev</span>
+                                    <div class="p-1 rounded bg-white/5 group-hover:bg-white/10 transition">
+                                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="p-5 cursor-pointer hover:text-white transition-colors group w-1/5" onclick="sortTable('designScore')">
+                                <div class="flex items-center gap-2">
+                                    Design Arena 
+                                    <span class="text-[0.6rem] text-slate-500 normal-case tracking-normal border border-white/10 px-1 rounded">Website</span>
+                                    <div class="p-1 rounded bg-white/5 group-hover:bg-white/10 transition">
+                                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                                    </div>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="text-sm"></tbody>
+                </table>
+            </div>
+
+            <div class="px-6 py-4 bg-black/40 border-t border-white/5 flex justify-between items-center text-xs text-slate-500">
+                <div class="flex items-center gap-2"><span id="countDisplay" class="font-bold text-white">0</span> models tracked</div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Default Data included directly to prevent fetch errors in preview environments
+        const defaultData = [
+            {
+            "model": "Claude 4.5 Opus medium",
+            "version": "20251101",
+            "sweScore": 74.40,
+            "sweDate": "2025-11-24",
+            "liveScore": 26.5,
+            "liveDate": "Nov 28, 2025",
+            "arenaScore": 1511,
+            "arenaDate": "2025-11-01",
+            "designScore": 1492,
+            "designDate": "Nov 30, 2025",
+            "isNew": true
+            },
+            {
+            "model": "Gemini 3 Pro Preview",
+            "version": "2025-11-18",
+            "sweScore": 74.20,
+            "sweDate": "2025-11-18",
+            "liveScore": 18.6,
+            "liveDate": "Nov 28, 2025",
+            "arenaScore": 1476,
+            "arenaDate": "Nov 2025",
+            "designScore": 1488,
+            "designDate": "Dec 05, 2025",
+            "isNew": true
+            },
+            {
+            "model": "Claude 4.5 Sonnet",
+            "version": "20250929",
+            "sweScore": 70.60,
+            "sweDate": "2025-09-29",
+            "liveScore": 14.7,
+            "liveDate": "Oct 10, 2025",
+            "arenaScore": 1398,
+            "arenaDate": "2025-09-29",
+            "designScore": 1445,
+            "designDate": "Oct 02, 2025",
+            "isNew": false
+            },
+            {
+            "model": "GPT-5 (medium reasoning)",
+            "version": "2025-08-07",
+            "sweScore": 65.00,
+            "sweDate": "2025-08-07",
+            "liveScore": 6.9,
+            "liveDate": "Aug 10, 2025",
+            "arenaScore": 1399,
+            "arenaDate": "Aug 2025",
+            "designScore": 1450,
+            "designDate": "Aug 15, 2025",
+            "isNew": false
+            },
+            {
+            "model": "DeepSeek V3.2 Reasoner",
+            "version": "",
+            "sweScore": 60.00,
+            "sweDate": "2025-12-01",
+            "liveScore": null,
+            "liveDate": null,
+            "arenaScore": 1293,
+            "arenaDate": "Dec 2025",
+            "designScore": 1390,
+            "designDate": "Dec 01, 2025",
+            "isNew": true
+            },
+            {
+            "model": "Claude 4 Opus",
+            "version": "20250514",
+            "sweScore": 67.60,
+            "sweDate": "2025-08-02",
+            "liveScore": 6.9,
+            "liveDate": "Aug 9, 2025",
+            "arenaScore": 1392,
+            "arenaDate": "2025-08-05",
+            "designScore": null,
+            "designDate": null,
+            "isNew": false
+            },
+            {
+            "model": "Claude 4 Sonnet",
+            "version": "20250514",
+            "sweScore": 64.93,
+            "sweDate": "2025-07-26",
+            "liveScore": 4.9,
+            "liveDate": "May 29, 2025",
+            "arenaScore": 1387,
+            "arenaDate": "2025-09-29",
+            "designScore": null,
+            "designDate": null,
+            "isNew": false
+            },
+            {
+            "model": "Minimax M2",
+            "version": "",
+            "sweScore": 61.00,
+            "sweDate": "2025-11-24",
+            "liveScore": null,
+            "liveDate": null,
+            "arenaScore": 1316,
+            "arenaDate": "Dec 2025",
+            "designScore": null,
+            "designDate": null,
+            "isNew": true
+            },
+            {
+            "model": "GPT-5 mini",
+            "version": "2025-08-07",
+            "sweScore": 59.80,
+            "sweDate": "2025-08-07",
+            "liveScore": null,
+            "liveDate": null,
+            "arenaScore": 1395,
+            "arenaDate": "Aug 2025",
+            "designScore": null,
+            "designDate": null,
+            "isNew": false
+            },
+            {
+            "model": "o3",
+            "version": "2025-04-16",
+            "sweScore": 58.40,
+            "sweDate": "2025-07-26",
+            "liveScore": 8.8,
+            "liveDate": "Jun 9, 2025",
+            "arenaScore": null,
+            "arenaDate": null,
+            "designScore": null,
+            "designDate": null,
+            "isNew": false
+            },
+            {
+            "model": "Qwen3-Coder",
+            "version": "Instruct",
+            "sweScore": 55.40,
+            "sweDate": "2025-08-02",
+            "liveScore": 4.9,
+            "liveDate": "Sep 1, 2025",
+            "arenaScore": 1289,
+            "arenaDate": "Sep 2025",
+            "designScore": null,
+            "designDate": null,
+            "isNew": false
+            },
+            {
+            "model": "GLM-4.6",
+            "version": "T=1",
+            "sweScore": 55.40,
+            "sweDate": "2025-12-01",
+            "liveScore": 2.9,
+            "liveDate": "Aug 25, 2025",
+            "arenaScore": 1366,
+            "arenaDate": "Dec 2025",
+            "designScore": null,
+            "designDate": null,
+            "isNew": true
+            },
+            {
+            "model": "Gemini 2.5 Pro",
+            "version": "2025-05-06",
+            "sweScore": 53.60,
+            "sweDate": "2025-07-26",
+            "liveScore": 3.9,
+            "liveDate": "Oct 9, 2025",
+            "arenaScore": 1213,
+            "arenaDate": "Oct 2025",
+            "designScore": null,
+            "designDate": null,
+            "isNew": false
+            },
+            {
+            "model": "Claude 3.7 Sonnet",
+            "version": "20250219",
+            "sweScore": 52.80,
+            "sweDate": "2025-07-20",
+            "liveScore": 3.8,
+            "liveDate": "May 29, 2025",
+            "arenaScore": null,
+            "arenaDate": null,
+            "designScore": null,
+            "designDate": null,
+            "isNew": false
+            },
+            {
+            "model": "o4-mini",
+            "version": "2025-04-16",
+            "sweScore": 45.00,
+            "sweDate": "2025-07-26",
+            "liveScore": 12.7,
+            "liveDate": "May 30, 2025",
+            "arenaScore": null,
+            "arenaDate": null,
+            "designScore": null,
+            "designDate": null,
+            "isNew": false
+            },
+            {
+            "model": "Kimi K2 Instruct",
+            "version": "",
+            "sweScore": 43.80,
+            "sweDate": "2025-08-07",
+            "liveScore": 4.9,
+            "liveDate": "Aug 25, 2025",
+            "arenaScore": 1350,
+            "arenaDate": "Aug 2025",
+            "designScore": null,
+            "designDate": null,
+            "isNew": false
+            },
+            {
+            "model": "GPT-4.1",
+            "version": "2025-04-14",
+            "sweScore": 39.58,
+            "sweDate": "2025-07-26",
+            "liveScore": null,
+            "liveDate": null,
+            "arenaScore": 1354,
+            "arenaDate": "Jul 2025",
+            "designScore": 1405,
+            "designDate": "Jul 22, 2025",
+            "isNew": false
+            },
+            {
+            "model": "Claude 3.5 V2 Sonnet",
+            "version": "",
+            "sweScore": null,
+            "sweDate": null,
+            "liveScore": 15.7,
+            "liveDate": "May 30, 2025",
+            "arenaScore": null,
+            "arenaDate": null,
+            "designScore": null,
+            "designDate": null,
+            "isNew": false
+            },
+            {
+            "model": "GPT-4o",
+            "version": "2024-11-20",
+            "sweScore": 21.62,
+            "sweDate": "2025-07-20",
+            "liveScore": 0.0,
+            "liveDate": "May 29, 2025",
+            "arenaScore": null,
+            "arenaDate": null,
+            "designScore": null,
+            "designDate": null,
+            "isNew": false
+            },
+            {
+            "model": "Midjourney v7 API",
+            "version": "",
+            "sweScore": null,
+            "sweDate": null,
+            "liveScore": null,
+            "liveDate": null,
+            "arenaScore": null,
+            "arenaDate": null,
+            "designScore": 1410,
+            "designDate": "Sep 20, 2025",
+            "isNew": false
+            }
+        ];
+
+        let allData = [...defaultData];
+        let currentSort = { key: 'sweScore', direction: 'desc' };
+
+        async function init() {
+            try {
+                // Try to fetch specific JSON file (for Production environment)
+                const response = await fetch('leaderboard_data.json');
+                if (response.ok) {
+                    const json = await response.json();
+                    allData = json.models;
+                    document.getElementById('lastUpdatedDisplay').innerText = json.lastUpdated || "Dec 2025";
+                }
+            } catch (e) {
+                // Silently fail in preview/blob environments and use defaultData
+                console.log("Using default data (Preview Mode)");
+                document.getElementById('lastUpdatedDisplay').innerText = "Dec 09, 2025";
+            }
+            
+            document.getElementById('loader').style.opacity = '0';
+            setTimeout(() => document.getElementById('loader').remove(), 500);
+            renderTable();
+        }
+
+        function getScoreColor(score, type) {
+            if (score == null) return 'text-slate-600';
+            if (type === 'arena' || type === 'design') { if (score >= 1450) return 'text-cyan-400'; if (score >= 1350) return 'text-emerald-400'; return 'text-slate-400'; }
+            if (score >= 70) return 'text-cyan-400'; if (score >= 50) return 'text-emerald-400'; if (score >= 10 && score < 30) return 'text-emerald-400'; return 'text-slate-400';
+        }
+
+        function getBarColor(score, type) {
+            if (score == null) return 'bg-transparent';
+            
+            if (type === 'arena') { if (score >= 1450) return 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]'; if (score >= 1350) return 'bg-emerald-500'; return 'bg-slate-700'; }
+            
+            if (type === 'design') { if (score >= 1450) return 'bg-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.5)]'; if (score >= 1350) return 'bg-violet-500'; return 'bg-slate-700'; }
+
+            let ns = type === 'live' ? score * 3 : score;
+            if (ns >= 70) return 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]'; if (ns >= 50) return 'bg-emerald-500'; return 'bg-slate-700';
+        }
+
+        function getBarWidth(score, type) {
+            if (score == null) return 0;
+            if (type === 'arena' || type === 'design') return Math.max(0, Math.min(100, ((score - 1000) / 600) * 100));
+            if (type === 'live') return Math.min((score / 30) * 100, 100);
+            return score;
+        }
+
+        function renderTable(data = allData) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            let sorted = [...data].sort((a, b) => {
+                let valA, valB;
+                if(currentSort.key === 'sweScore') { valA = a.sweScore; valB = b.sweScore; }
+                else if(currentSort.key === 'liveScore') { valA = a.liveScore; valB = b.liveScore; }
+                else if(currentSort.key === 'arenaScore') { valA = a.arenaScore; valB = b.arenaScore; }
+                else if(currentSort.key === 'designScore') { valA = a.designScore; valB = b.designScore; }
+                
+                if (valA == null) valA = currentSort.direction === 'asc' ? Infinity : -Infinity;
+                if (valB == null) valB = currentSort.direction === 'asc' ? Infinity : -Infinity;
+                return currentSort.direction === 'asc' ? (valA - valB) : (valB - valA);
+            });
+
+            document.getElementById('modelCountTicker').innerText = sorted.length;
+            document.getElementById('countDisplay').innerText = sorted.length;
+            
+            const isScoreSort = ['sweScore', 'liveScore', 'arenaScore', 'designScore'].includes(currentSort.key);
+            const showRank = currentSort.direction === 'desc' && isScoreSort;
+
+            sorted.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.className = `table-row-anim group ${index === 0 && showRank ? 'rank-1-row' : ''}`;
+                
+                let rankHTML = `<span class="text-slate-600 mono-num text-lg opacity-50 font-bold">#${index+1}</span>`;
+                if (showRank) {
+                    if (index === 0) rankHTML = `<i data-lucide="trophy" class="w-7 h-7 mx-auto text-yellow-400 trophy-glow-gold"></i>`;
+                    else if (index === 1) rankHTML = `<i data-lucide="trophy" class="w-6 h-6 mx-auto text-slate-300 trophy-glow-silver"></i>`;
+                    else if (index === 2) rankHTML = `<i data-lucide="trophy" class="w-6 h-6 mx-auto text-amber-700 trophy-glow-bronze"></i>`;
+                }
+                
+                const newBadge = row.isNew ? `<span class="neon-badge ml-3 px-2 py-0.5 rounded text-[0.65rem] font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 tracking-wider uppercase">New</span>` : '';
+                
+                const makeCell = (score, date, type) => {
+                    if(score == null) return `<div class="w-full text-center text-slate-800 font-mono text-xl select-none">-</div>`;
+                    
+                    const sTxt = (type === 'arena' || type === 'design') ? score : score.toFixed(1) + '%';
+                    const sDate = date || '--';
+
+                    return `
+                    <div class="flex flex-col w-full group/cell">
+                        <div class="flex items-end justify-between mb-1.5">
+                            <span class="text-base font-bold ${getScoreColor(score, type)} font-mono tracking-tight group-hover/cell:scale-105 transition-transform duration-300 origin-left">${sTxt}</span>
+                        </div>
+                        <div class="w-full h-1.5 rounded-full bg-slate-800/50 overflow-hidden mb-2 backdrop-blur-sm">
+                            <div class="h-full ${getBarColor(score, type)} transition-all duration-1000 ease-out" style="width: ${getBarWidth(score, type)}%"></div>
+                        </div>
+                        <div class="flex flex-col gap-0.5 opacity-60 group-hover/cell:opacity-100 transition-opacity">
+                            <div class="flex items-center text-[0.6rem] text-slate-500 gap-1.5">
+                                <i data-lucide="calendar" class="w-3 h-3"></i> ${sDate}
+                            </div>
+                        </div>
+                    </div>`;
+                };
+
+                tr.innerHTML = `
+                    <td class="p-5 text-center align-middle border-b border-white/5">${rankHTML}</td>
+                    <td class="p-5 align-middle border-b border-white/5">
+                        <span class="font-bold text-slate-200 text-base flex items-center">
+                            ${row.model} ${newBadge}
+                        </span>
+                        <div class="spec-name" title="${row.version}">${row.version || ''}</div>
+                    </td>
+                    <td class="p-5 align-middle border-b border-white/5">${makeCell(row.sweScore, row.sweDate, 'swe')}</td>
+                    <td class="p-5 align-middle border-b border-white/5">${makeCell(row.liveScore, row.liveDate, 'live')}</td>
+                    <td class="p-5 align-middle border-b border-white/5">${makeCell(row.arenaScore, row.arenaDate, 'arena')}</td>
+                    <td class="p-5 align-middle border-b border-white/5">${makeCell(row.designScore, row.designDate, 'design')}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        window.sortTable = (key) => {
+            currentSort.direction = (currentSort.key === key && currentSort.direction === 'desc') ? 'asc' : 'desc';
+            currentSort.key = key;
+            renderTable();
+        };
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const input = e.target.value.toLowerCase();
+            const terms = input.split(',').map(s => s.trim()).filter(s => s);
+            
+            if (!terms.length) {
+                renderTable(allData);
+            } else {
+                const filtered = allData.filter(item => {
+                    const txt = [
+                        item.model, 
+                        item.version
+                    ].join(' ').toLowerCase();
+                    return terms.some(t => t.split(/\s+/).every(sub => txt.includes(sub)));
+                });
+                renderTable(filtered);
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>'''
+
+with open("index.html", "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print("Files created successfully.")
